@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bonus Objective Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .bonus-label {
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: #ffd700;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .star-decoration {
+            font-size: 2rem;
+            color: #ffd700;
+            margin: 0 10px;
+        }
+
+        .objective-container {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.5s ease;
+        }
+
+        .objective-container.warning {
+            border-color: #ff6b6b;
+            animation: pulse 1s infinite;
+        }
+
+        .objective-container.switching {
+            animation: flash 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(255, 107, 107, 0.8); }
+        }
+
+        @keyframes flash {
+            0% { transform: scale(1); background: rgba(255, 215, 0, 0.3); }
+            50% { transform: scale(1.05); background: rgba(255, 215, 0, 0.5); }
+            100% { transform: scale(1); background: rgba(255, 255, 255, 0.1); }
+        }
+
+        .objective-text {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-container {
+            margin-top: 30px;
+        }
+
+        .timer-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .timer {
+            font-size: 4rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            color: #4ade80;
+            text-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+            transition: color 0.3s ease;
+        }
+
+        .timer.warning {
+            color: #ff6b6b;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            border-radius: 4px;
+            transition: width 1s linear, background 0.3s ease;
+        }
+
+        .progress-fill.warning {
+            background: linear-gradient(90deg, #ff6b6b, #ef4444);
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #1a1a2e;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 222, 128, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-skip {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #1a1a2e;
+        }
+
+        .btn-skip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .sound-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .sound-indicator:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .history {
+            margin-top: 40px;
+            text-align: left;
+        }
+
+        .history-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .history-list {
+            list-style: none;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .history-item:first-child {
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="sound-indicator" id="soundToggle" title="Click to toggle sound">
+        <span id="soundIcon">🔊</span>
+        <span id="soundStatus">Sound ON</span>
+    </div>
+
+    <div class="container">
+        <div class="bonus-label">
+            <span class="star-decoration">★</span>
+            Bonus Objective
+            <span class="star-decoration">★</span>
+        </div>
+
+        <div class="objective-container" id="objectiveContainer">
+            <div class="objective-text" id="objectiveText">
+                Press Start to begin!
+            </div>
+        </div>
+
+        <div class="timer-container">
+            <div class="timer-label">Time Remaining</div>
+            <div class="timer" id="timer">10:00</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 100%"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-primary" id="startBtn">Start</button>
+            <button class="btn-secondary" id="pauseBtn" disabled>Pause</button>
+            <button class="btn-skip" id="skipBtn" disabled>Skip</button>
+        </div>
+
+        <div class="history" id="historySection" style="display: none;">
+            <div class="history-title">Previous Objectives</div>
+            <ul class="history-list" id="historyList"></ul>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - Edit objectives here
+        // ============================================
+        const OBJECTIVES = [
+            "Collect 50 Gold Coins",
+            "Defeat 3 Enemies Without Taking Damage",
+            "Find the Hidden Treasure",
+            "Complete a Combo of 10 Hits",
+            "Reach the Checkpoint in Under 2 Minutes",
+            "Collect All Power-ups in the Area",
+            "Perform a Perfect Dodge 5 Times",
+            "Discover a Secret Room",
+            "Defeat the Mini-Boss",
+            "Collect 3 Rare Items",
+            "Complete the Puzzle Without Hints",
+            "Survive for 60 Seconds in the Danger Zone",
+            "Rescue All NPCs",
+            "Achieve a High Score Multiplier of x5",
+            "Find and Activate All Switches"
+        ];
+
+        const TIMER_DURATION = 10 * 60; // 10 minutes in seconds
+        const WARNING_TIME = 60; // 1 minute warning
+
+        // ============================================
+        // STATE
+        // ============================================
+        let timeRemaining = TIMER_DURATION;
+        let timerInterval = null;
+        let isRunning = false;
+        let isPaused = false;
+        let currentObjective = null;
+        let objectiveHistory = [];
+        let availableObjectives = [...OBJECTIVES];
+        let soundEnabled = true;
+        let audioContext = null;
+
+        // ============================================
+        // DOM ELEMENTS
+        // ============================================
+        const objectiveText = document.getElementById('objectiveText');
+        const objectiveContainer = document.getElementById('objectiveContainer');
+        const timerDisplay = document.getElementById('timer');
+        const progressFill = document.getElementById('progressFill');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const skipBtn = document.getElementById('skipBtn');
+        const historySection = document.getElementById('historySection');
+        const historyList = document.getElementById('historyList');
+        const soundToggle = document.getElementById('soundToggle');
+        const soundIcon = document.getElementById('soundIcon');
+        const soundStatus = document.getElementById('soundStatus');
+
+        // ============================================
+        // AUDIO FUNCTIONS
+        // ============================================
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        function playTone(frequency, duration, type = 'sine', volume = 0.3) {
+            if (!soundEnabled || !audioContext) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+
+            gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function playWarningSound() {
+            if (!soundEnabled) return;
+            initAudio();
+
+            // Play a warning beep pattern
+            playTone(880, 0.2, 'sine', 0.4);
+            setTimeout(() => playTone(880, 0.2, 'sine', 0.4), 300);
+            setTimeout(() => playTone(880, 0.2, 'sine', 0.4), 600);
+        }
+
+        function playAlarmSound() {
+            if (!soundEnabled) return;
+            initAudio();
+
+            // Play a more elaborate alarm for objective switch
+            const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
+            notes.forEach((freq, i) => {
+                setTimeout(() => playTone(freq, 0.15, 'square', 0.3), i * 100);
+            });
+            setTimeout(() => {
+                notes.reverse().forEach((freq, i) => {
+                    setTimeout(() => playTone(freq, 0.15, 'square', 0.3), i * 100);
+                });
+            }, 500);
+        }
+
+        // ============================================
+        // OBJECTIVE FUNCTIONS
+        // ============================================
+        function getRandomObjective() {
+            // Reset available objectives if we've used them all
+            if (availableObjectives.length === 0) {
+                availableObjectives = OBJECTIVES.filter(obj => obj !== currentObjective);
+            }
+
+            // Pick a random objective from available ones
+            const randomIndex = Math.floor(Math.random() * availableObjectives.length);
+            const objective = availableObjectives[randomIndex];
+
+            // Remove from available pool
+            availableObjectives.splice(randomIndex, 1);
+
+            return objective;
+        }
+
+        function setNewObjective() {
+            // Add current objective to history if it exists
+            if (currentObjective) {
+                objectiveHistory.unshift(currentObjective);
+                if (objectiveHistory.length > 5) {
+                    objectiveHistory.pop();
+                }
+                updateHistory();
+            }
+
+            // Get and display new objective
+            currentObjective = getRandomObjective();
+            objectiveText.textContent = currentObjective;
+
+            // Visual feedback
+            objectiveContainer.classList.add('switching');
+            setTimeout(() => {
+                objectiveContainer.classList.remove('switching');
+            }, 500);
+
+            // Play alarm sound
+            playAlarmSound();
+        }
+
+        function updateHistory() {
+            if (objectiveHistory.length > 0) {
+                historySection.style.display = 'block';
+                historyList.innerHTML = objectiveHistory
+                    .map(obj => `<li class="history-item">${obj}</li>`)
+                    .join('');
+            }
+        }
+
+        // ============================================
+        // TIMER FUNCTIONS
+        // ============================================
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            timerDisplay.textContent = formatTime(timeRemaining);
+
+            const progress = (timeRemaining / TIMER_DURATION) * 100;
+            progressFill.style.width = `${progress}%`;
+
+            // Warning state (1 minute or less)
+            const isWarning = timeRemaining <= WARNING_TIME && timeRemaining > 0;
+            timerDisplay.classList.toggle('warning', isWarning);
+            progressFill.classList.toggle('warning', isWarning);
+            objectiveContainer.classList.toggle('warning', isWarning);
+        }
+
+        function tick() {
+            timeRemaining--;
+            updateDisplay();
+
+            // Play warning sound at exactly 1 minute
+            if (timeRemaining === WARNING_TIME) {
+                playWarningSound();
+            }
+
+            // Time's up - switch objective
+            if (timeRemaining <= 0) {
+                setNewObjective();
+                timeRemaining = TIMER_DURATION;
+                updateDisplay();
+            }
+        }
+
+        function startTimer() {
+            initAudio();
+
+            if (!isRunning) {
+                setNewObjective();
+                timeRemaining = TIMER_DURATION;
+            }
+
+            isRunning = true;
+            isPaused = false;
+
+            timerInterval = setInterval(tick, 1000);
+
+            startBtn.textContent = 'Running';
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            skipBtn.disabled = false;
+
+            updateDisplay();
+        }
+
+        function pauseTimer() {
+            if (isPaused) {
+                // Resume
+                timerInterval = setInterval(tick, 1000);
+                pauseBtn.textContent = 'Pause';
+                isPaused = false;
+            } else {
+                // Pause
+                clearInterval(timerInterval);
+                pauseBtn.textContent = 'Resume';
+                isPaused = true;
+            }
+        }
+
+        function skipObjective() {
+            clearInterval(timerInterval);
+            setNewObjective();
+            timeRemaining = TIMER_DURATION;
+            updateDisplay();
+
+            if (!isPaused) {
+                timerInterval = setInterval(tick, 1000);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            soundIcon.textContent = soundEnabled ? '🔊' : '🔇';
+            soundStatus.textContent = soundEnabled ? 'Sound ON' : 'Sound OFF';
+
+            if (soundEnabled) {
+                initAudio();
+            }
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        skipBtn.addEventListener('click', skipObjective);
+        soundToggle.addEventListener('click', toggleSound);
+
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>
